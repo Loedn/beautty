@@ -1,0 +1,52 @@
+# Ignore bundler cache and installed gems
+vendor/bundle/
+vendor/cache/
+
+# Ignore downloaded gems
+*.gem
+
+# Ignore generated documentation
+/doc/
+/.yardoc/
+/_yardoc/
+/.yardopts
+
+# Ignore log files
+*.log
+log/*.log
+!log/.keep
+
+# Ignore temporary files and directories
+/tmp/
+*.tmp
+*.swp
+*.swo
+*~
+
+# Ignore coverage reports
+/coverage/
+
+# Ignore build artifacts
+/pkg/
+
+# Ignore environment variables files (except example)
+.env*
+!.env.example
+!.env.development
+!.env.test
+
+# Ignore OS-specific files
+.DS_Store
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Ignore IDE/editor specific files
+.idea/
+.vscode/
+.cursor/
+*.sublime-project
+*.sublime-workspace
