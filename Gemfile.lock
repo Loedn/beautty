@@ -12,6 +12,7 @@ GEM
       ruby-progressbar
     rake (13.2.1)
     ruby-progressbar (1.13.0)
+    ruby-termios (1.1.0)
     simplecov (0.22.0)
       docile (~> 1.1)
       simplecov-html (~> 0.11)
@@ -28,6 +29,7 @@ DEPENDENCIES
   minitest (~> 5.19)
   minitest-reporters (~> 1.6)
   rake (~> 13.0)
+  ruby-termios
   simplecov (~> 0.22.0)
   yard (~> 0.9.34)
 
