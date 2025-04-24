@@ -1,8 +1,37 @@
-require 'rspec/core/rake_task'
+require 'rake/testtask'
 
-RSpec::Core::RakeTask.new(:spec)
+Rake::TestTask.new(:test) do |t|
+  t.libs << "test"
+  t.libs << "lib"
+  t.pattern = "test/**/*_test.rb"
+end
 
-task default: :spec
+# Task to run a specific test file or test
+# Example: 
+#   rake test:file TEST=test/beautty_test.rb
+#   rake test:file TEST=test/beautty_test.rb NAME=test_has_version_number
+namespace :test do
+  desc "Run a specific test file or test"
+  task :file do
+    file = ENV["TEST"] || begin
+      puts "No test file specified. Use TEST=path/to/test_file.rb"
+      exit 1
+    end
+    
+    name = ENV["NAME"]
+    command = "ruby -I lib:test #{file}"
+    command += " -n #{name}" if name
+    
+    sh command
+  end
+  
+  desc "Run tests with verbose output"
+  task :verbose do
+    sh "ruby -I lib:test test/test_runner.rb --verbose"
+  end
+end
+
+task default: :test
 
 desc 'Generate documentation'
 task :doc do
@@ -137,4 +166,9 @@ end
 desc 'Run the container demo'
 task :container do
   ruby 'examples/container_demo.rb'
+end
+
+desc 'Run the footer demo'
+task :footer do
+  ruby 'examples/footer_demo.rb'
 end
