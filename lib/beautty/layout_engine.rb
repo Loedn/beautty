@@ -46,10 +46,12 @@ module Beautty
       flex_direction = element.style[:flex_direction] || :column 
 
       # Lay out children within the calculated content area
+      justify_content = element.style[:justify_content] || :flex_start # Default
+
       if flex_direction == :row
-        # Pass available_height for cross-axis constraints
-        # TODO: Implement flex-grow/shrink/basis/align-items for rows
-        layout_children_row(children, content_x, content_y, available_width, available_height)
+        # Pass available_height and align_items for cross-axis constraints
+        align_items = element.style[:align_items] || :stretch # Default to stretch
+        layout_children_row(children, content_x, content_y, available_width, available_height, align_items, justify_content)
       elsif flex_direction == :column && !children.empty?
         # --- Column Layout with Flex-Grow --- 
         
@@ -77,8 +79,48 @@ module Beautty
         height_per_grow_unit = (total_grow > 0 && extra_height > 0) ? (extra_height / total_grow) : 0
         # TODO: Handle remainder distribution for pixel perfection
 
+        # --- Calculate Justify Content Offset (Column) --- 
+        provisional_total_final_height = 0
+        children.each do |child|
+          p_height = child_preferred_heights[child]
+          grow = child.style[:flex_grow].to_f || 0.0
+          if grow > 0 && height_per_grow_unit > 0
+            p_height += (height_per_grow_unit * grow).floor
+          end
+          provisional_total_final_height += [p_height, 0].max # Use provisional height
+        end
+
+        remaining_height = [available_height - provisional_total_final_height, 0].max
+        initial_offset_y = 0
+        spacing_between_y = 0
+        num_children = children.size
+
+        case justify_content
+        when :flex_end
+          initial_offset_y = remaining_height
+        when :center
+          initial_offset_y = remaining_height / 2
+        when :"space-between"
+          spacing_between_y = remaining_height / (num_children - 1) if num_children > 1
+          # First item at start (initial_offset_y = 0)
+        when :"space-around"
+          if num_children > 0
+            spacing_unit = remaining_height.to_f / num_children
+            initial_offset_y = (spacing_unit / 2).round
+            spacing_between_y = spacing_unit.round
+          end
+        when :"space-evenly"
+          if num_children > 0
+            spacing_unit = remaining_height.to_f / (num_children + 1)
+            initial_offset_y = spacing_unit.round
+            spacing_between_y = spacing_unit.round
+          end
+        # else :flex-start: initial_offset_y = 0, spacing_between_y = 0
+        end
+
         # --- Pass 2: Position & Set Final Layout --- 
-        current_y = content_y
+        current_y = content_y + initial_offset_y # Apply justify-content offset
+
         children.each do |child|
           preferred_height = child_preferred_heights[child]
           final_height = preferred_height
@@ -91,11 +133,14 @@ module Beautty
 
           # Ensure height doesn't exceed available space (especially relevant for the last grow item)
           remaining_available = available_height - (current_y - content_y)
+
           final_height = [final_height, remaining_available].min
+
           final_height = [final_height, 0].max # Ensure non-negative height
 
           # Now perform the *final* layout call for the child with its determined bounds
           final_child_layout = { x: content_x, y: current_y, width: available_width, height: final_height }
+
           layout_node(child, final_child_layout)
 
           # Update child layout again to ensure position/size is exactly what we calculated here
@@ -106,6 +151,7 @@ module Beautty
           child.layout[:height] = final_height
 
           current_y += final_height
+          current_y += spacing_between_y # Add spacing for space-* modes
         end
       else
         # No children or not column layout, do nothing in this step
@@ -164,7 +210,9 @@ module Beautty
 
     # Lays out children horizontally, implementing flex-grow.
     # @param available_height [Integer] Available height for children (cross-axis constraint)
-    def layout_children_row(children, start_x, start_y, available_width, available_height)
+    # @param align_items [Symbol] Cross-axis alignment (:stretch, :flex_start, etc.)
+    # @param justify_content [Symbol] Main-axis alignment (:flex-start, :center, etc.)
+    def layout_children_row(children, start_x, start_y, available_width, available_height, align_items, justify_content)
       return if children.empty?
 
       # --- Pass 1: Measure Preferred Width & Sum Grow Factors ---
@@ -173,8 +221,8 @@ module Beautty
       child_preferred_widths = {}
 
       children.each do |child|
-        # Estimate preferred size with available height but unconstrained width
-        temp_parent_layout = { x: start_x, y: start_y, width: Float::INFINITY, height: available_height }
+        # Estimate preferred size with unconstrained width *and* height for truer measurement
+        temp_parent_layout = { x: start_x, y: start_y, width: Float::INFINITY, height: Float::INFINITY }
         layout_node(child, temp_parent_layout)
         preferred_width = child.layout[:width]
         child_preferred_widths[child] = preferred_width
@@ -190,8 +238,9 @@ module Beautty
       extra_width = available_width - total_preferred_width
       width_per_grow_unit = (total_grow > 0 && extra_width > 0) ? (extra_width / total_grow) : 0
 
-      # --- Pass 2: Position & Set Final Layout ---
-      current_x = start_x
+      # --- Pass 2: Calculate Final Widths and Total Used Width ---
+      child_final_widths = {}
+      total_final_width = 0
       children.each do |child|
         preferred_width = child_preferred_widths[child]
         final_width = preferred_width
@@ -202,10 +251,44 @@ module Beautty
           final_width += added_width
         end
 
-        # Ensure width doesn't exceed available space
-        remaining_available = available_width - (current_x - start_x)
-        final_width = [final_width, remaining_available].min
         final_width = [final_width, 0].max
+
+        child_final_widths[child] = final_width
+        total_final_width += final_width
+      end
+
+      # --- Calculate Justify Content Offset --- 
+      remaining_width = available_width - total_final_width
+      initial_offset_x = 0
+      spacing_between_x = 0
+      num_children = children.size
+
+      case justify_content
+      when :flex_end
+        initial_offset_x = remaining_width
+      when :center
+        initial_offset_x = remaining_width / 2
+      when :"space-between"
+        spacing_between_x = remaining_width / (num_children - 1) if num_children > 1
+      when :"space-around"
+        if num_children > 0
+          spacing_unit = remaining_width.to_f / num_children
+          initial_offset_x = (spacing_unit / 2).round
+          spacing_between_x = spacing_unit.round
+        end
+      when :"space-evenly"
+        if num_children > 0
+          spacing_unit = remaining_width.to_f / (num_children + 1)
+          initial_offset_x = spacing_unit.round
+          spacing_between_x = spacing_unit.round
+        end
+      # else :flex-start: initial_offset_x = 0, spacing_between_x = 0
+      end
+
+      # --- Pass 3: Position & Set Final Layout ---
+      current_x = start_x + initial_offset_x # Apply justify-content offset
+      children.each do |child|
+        final_width = child_final_widths[child]
 
         # Perform final layout call with calculated width and parent's available height
         final_child_layout = { x: current_x, y: start_y, width: final_width, height: available_height }
@@ -216,10 +299,18 @@ module Beautty
         child.layout[:y] = start_y
         child.layout[:width] = final_width
 
-        # TODO: Height should depend on align-items (e.g., stretch)
-        child.layout[:height] = [child.layout[:height], available_height].min # Respect parent height constraint
+        # Handle align-items
+        if align_items == :stretch && available_height != Float::INFINITY
+          # Force child height to fill the row's available height (which is constrained by parent)
+          child.layout[:height] = available_height
+        else
+          # For other align-items, use child's calculated height, constrained by available space.
+          # TODO: Implement actual positioning for :flex-start, :center, :flex-end
+          child.layout[:height] = [child.layout[:height], available_height].min
+        end
 
         current_x += final_width
+        current_x += spacing_between_x # Add spacing for space-* modes
       end
     end
 

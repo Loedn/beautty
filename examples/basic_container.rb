@@ -19,51 +19,47 @@ container = Beautty::Container.new
 # Build the UI tree within the container context
 Beautty::DSLBuilder.build(container) do
   row do
-    div(style: { border: :single, header: "Hello World Rows"}) do
+    div(style: { border: :single, header: "row 1"}) do
       text("hello world 1")
     end
-    div(style: { border: :single, header: "Hello World Rows"}) do
+    div(style: { border: :single, header: "row 1"}) do
       text("hello world 2")
     end
-    div(style: { border: :single, header: "Hello World Rows"}) do
+    div(style: { border: :single, header: "row 1"}) do
       text("hello world 3")
     end
   end
-  row do
-    div(style: { border: :single, header: "Hello World Rows"}) do
+  row style: {justify_content: :"space-between"} do
+    div(style: { border: :single, header: "row 2"}) do
       text("hello world 1")
     end
-    div(style: { border: :single, header: "Hello World Rows"}) do
+    div(style: { border: :single, header: "row 2"}) do
       text("hello world 2")
     end
   end
-  row do
-    div(style: { border: :single, header: "Hello Example"}) do
+  row style: {justify_content: :center} do
+    div(style: { border: :single, header: "row 3"}) do
         div(style: { border: :single, header: "boom"}) do
             text("hello world 1")
         end
     end
-    div(style: { border: :single, header: "Hello Grow Example", flex_grow: 1}) do
-        
-        text("hello world 2")
-    end
   end
-  row do
-    div(style: { border: :single, header: "Hello World Rows"}) do
+  row style: {justify_content: :"space-around"} do
+    div(style: { border: :single, header: "row 4"}) do
       text("hello world 1")
     end
-    div(style: { border: :single, header: "Hello World Rows"}) do
+    div(style: { border: :single, header: "row 4"}) do
       text("hello world 2")
     end
   end
-  row do
-    div(style: { border: :single, header: "Hello World Rows"}) do
+  row style: {justify_content: :"space-evenly"} do
+    div(style: { border: :single, header: "row 5"}) do
       text("hello world 1")
     end
-    div(style: { border: :single, header: "Hello World Rows"}) do
+    div(style: { border: :single, header: "row 5"}) do
       text("hello world 2")
     end
-    div(style: { border: :single, header: "Hello World Rows"}) do
+    div(style: { border: :single, header: "row 5"}) do
       text("hello world 3")
     end
   end

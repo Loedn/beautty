@@ -31,18 +31,21 @@ module Beautty
     # DSL helper methods
     def div(style: {}, &block)
       element = Beautty::Div.new(style: style)
+      @@current_parent&.add_child(element)
       DSLBuilder.within_parent(element, &block) if block
       element
     end
 
     def row(style: {}, &block)
       element = Beautty::Row.new(style: style)
+      @@current_parent&.add_child(element)
       DSLBuilder.within_parent(element, &block) if block
       element
     end
 
     def text(content, style: {})
       element = Beautty::Text.new(content, style: style)
+      @@current_parent&.add_child(element)
       element
     end
 
